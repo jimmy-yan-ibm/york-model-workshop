@@ -1,0 +1,1 @@
+A simple library containing a simple custom scikit estimator.
