@@ -2,85 +2,68 @@ import pandas as pd
 from linalg_norm.sklearn_transformers import LNormalizer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
+import numpy as np
+import warnings
+warnings.filterwarnings('ignore')
 
-dummy_data = [
-    [0, 10, 100, 4000, 0, 0, 0, 11, 0, 0, 0, 0],
-    [50, 3, 1000, 1000, 3, 3000, 55, 0, 2, 7, 10000, 1],
-    [0, 80, 10000, 2000, 45, 10, 10, 0, 2, 0, 0, 0],
-]
-columns = [ 'pod restarts',
-            'vault memory percentage',
-            'input container logs',
-            'input journal logs',
-            'memory percentage',
-            'input sys logs',
-            'cpu percentage',
-            'output ICL processed logs',
-            'vault cpu percentage',
-            'output ICL dropped logs',
-            'output ICL retried logs',
-            'status'
-        ]
+data_df = pd.read_csv("training-dataset.csv", encoding="utf-8")
 
-data_df = pd.DataFrame(dummy_data, columns=columns)
+print(data_df.head())
+
 target = data_df["status"]
 params = data_df.drop("status", axis=1)
-
-# # Could split into train/test sets here
-# from sklearn.model_selection import train_test_split
-
-# X_train, X_test, y_train, y_test = train_test_split(params, target, test_size=0.25, random_state=143)
 
 lnorm_transf = LNormalizer()
 # Create imputer that replaces NaNs with 0
 imputer = SimpleImputer(strategy='constant', fill_value=0)
 # Choose the Linear Regression model
 skl_pipeline = Pipeline(steps=[('normalizer', lnorm_transf), ('imputer', imputer), ('status_estimator', LinearRegression())])
-skl_pipeline.fit(params.loc[:, ['pod restarts',
-                                'vault memory percentage',
+skl_pipeline.fit(params.loc[:, ['container 1 cpu percentage',
+                                'container 1 memory percentage',
                                 'input container logs',
                                 'input journal logs',
-                                'memory percentage',
-                                'input sys logs',
-                                'cpu percentage',
-                                'output ICL processed logs',
-                                'vault cpu percentage',
-                                'output ICL dropped logs',
-                                'output ICL retried logs']].values, target)
+                                'input system logs',
+                                'output processed logs',
+                                'output dropped logs',
+                                'output retried logs',
+                                'agent restarts',
+                                'container 2 cpu percentage',
+                                'container 2 memory percentage',
+                                'container 3 cpu percentage',
+                                'container 3 memory percentage',
+                                'input container logs bytes',
+                                'input journal logs bytes',
+                                'input system logs bytes',
+                                'output processed bytes']].values, target)
 
 # The weights (coefficients) indicate the expected change in the status for a one-unit increase in the corresponding parameter.
 weights = skl_pipeline.named_steps['status_estimator'].coef_
+print("============ Linear Regression Weights ============")
 print(weights)
 
-test_data = [
-    [20, 10, 3000, 4000, 5, 0, 43, 0, 21, 500, 0]
-]
-columns = [ 'pod restarts',
-            'vault memory percentage',
-            'input container logs',
-            'input journal logs',
-            'memory percentage',
-            'input sys logs',
-            'cpu percentage',
-            'output ICL processed logs',
-            'vault cpu percentage',
-            'output ICL dropped logs',
-            'output ICL retried logs'
-        ]
+test_df = pd.read_csv("test-dataset.csv", encoding="utf-8")
 
-test_df = pd.DataFrame(test_data, columns=columns)
+print(test_df.head())
 
-status_prediction = skl_pipeline.predict(test_df.loc[:, ['pod restarts',
-                                                        'vault memory percentage',
+status_prediction = skl_pipeline.predict(test_df.loc[:, ['container 1 cpu percentage',
+                                                        'container 1 memory percentage',
                                                         'input container logs',
                                                         'input journal logs',
-                                                        'memory percentage',
-                                                        'input sys logs',
-                                                        'cpu percentage',
-                                                        'output ICL processed logs',
-                                                        'vault cpu percentage',
-                                                        'output ICL dropped logs',
-                                                        'output ICL retried logs']].values)
+                                                        'input system logs',
+                                                        'output processed logs',
+                                                        'output dropped logs',
+                                                        'output retried logs',
+                                                        'agent restarts',
+                                                        'container 2 cpu percentage',
+                                                        'container 2 memory percentage',
+                                                        'container 3 cpu percentage',
+                                                        'container 3 memory percentage',
+                                                        'input container logs bytes',
+                                                        'input journal logs bytes',
+                                                        'input system logs bytes',
+                                                        'output processed bytes']].values)
 
 print(status_prediction)
